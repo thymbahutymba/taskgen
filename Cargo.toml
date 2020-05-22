@@ -1,5 +1,5 @@
 [package]
-name = "taskgen"
+name = "taskgen-rs"
 version = "0.1.0"
 authors = ["thymbahutymba"]
 edition = "2018"
