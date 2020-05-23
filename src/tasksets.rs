@@ -1,6 +1,7 @@
 use getset::Getters;
 use ndarray::Array1;
 use num::integer::Integer;
+use std::iter::FromIterator;
 
 #[derive(Debug, Getters)]
 #[getset(get = "pub")]
@@ -9,6 +10,12 @@ pub struct Task {
     util: f32,
     period: f32,
     c: f32,
+}
+
+impl From<&[f32; 4]> for Task {
+    fn from(&[i, util, c, period]: &[f32; 4]) -> Self {
+        Task { i, util, c, period }
+    }
 }
 
 #[derive(Debug)]
@@ -45,8 +52,36 @@ impl From<&Vec<Array1<f32>>> for Taskset {
     }
 }
 
+impl<'a> FromIterator<&'a str> for Taskset {
+    fn from_iter<T: IntoIterator<Item = &'a str>>(taskset_str: T) -> Self {
+        Taskset(
+            taskset_str
+                .into_iter()
+                .filter(|t| !(*t).is_empty())
+                .map(|t| {
+                    let task = (*t)
+                        .split(" ")
+                        .map(|e| e.parse().unwrap())
+                        .enumerate()
+                        .fold([0.0; 4], |mut acc, (i, x)| {
+                            acc[i] = x;
+                            acc
+                        });
+                    Task::from(&task)
+                })
+                .collect::<Vec<Task>>(),
+        )
+    }
+}
+
 #[derive(Debug)]
 pub struct TasksetArray(Vec<Taskset>);
+
+impl TasksetArray {
+    pub fn new(ta: Vec<Taskset>) -> Self {
+        TasksetArray(ta)
+    }
+}
 
 impl AsRef<[Taskset]> for TasksetArray {
     fn as_ref(&self) -> &[Taskset] {

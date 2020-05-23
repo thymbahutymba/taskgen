@@ -69,16 +69,11 @@ struct JsonConfig<'a> {
     global: JsonRtappConfig<'a>,
 }
 
-<<<<<<< HEAD
-pub fn create_config_json(t: &Taskset, global_conf: &RTAppOpt, fname: String) {
-    let hyperperiod = t.get_hyperperiod();
-=======
 pub fn create_config_json(t: &Taskset, global_conf: &RTAppOpt, fname: &String) {
     // Hyperperiod from usec to sec
     let hyperperiod = (t.get_hyperperiod() as f64 / 1_000_000.0).ceil() as usize;
->>>>>>> 782bfa9... .
     let rt_app_config = JsonRtappConfig {
-        duration: (2 * hyperperiod),
+        duration: (2 * hyperperiod), // seconds
         inner: global_conf,
     };
 
@@ -87,7 +82,7 @@ pub fn create_config_json(t: &Taskset, global_conf: &RTAppOpt, fname: &String) {
         global: rt_app_config,
     };
 
-    let mut file = File::create(&fname).unwrap();
+    let mut file = File::create(fname).unwrap();
     file.write_all(serde_json::to_string_pretty(&config).unwrap().as_bytes())
         .unwrap();
 }
