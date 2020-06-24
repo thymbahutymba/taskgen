@@ -55,7 +55,7 @@ fn main() -> std::io::Result<()> {
     std::fs::create_dir_all("./json")?;
 
     tasksets.as_ref().iter().enumerate().for_each(|(i, t)| {
-        rt_app::create_config_json(t, &opt.rtapp_options, &format!("./json/Config{}.json", i))
+        rt_app::create_config_json(t, &opt.rtapp_options, &format!("./json/Config{}_{}t_{:.1}u.json", i, opt.taskgen_options.n, opt.taskgen_options.util as f32))
     });
 
     Ok(())

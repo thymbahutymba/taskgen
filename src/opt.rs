@@ -139,8 +139,8 @@ pub struct RTAppOpt {
         use_delimiter = true
     )]
     ftrace: Option<Vec<String>>,*/
-    //#[structopt(long, help = "Create a gnu plot compatible file for each threads")]
-    #[structopt(skip)]
+    #[structopt(long, help = "Create a gnu plot compatible file for each threads")]
+    //#[structopt(skip)]
     gnuplot: bool,
     /*#[structopt(
         long,
