@@ -7,16 +7,22 @@ use crate::{
     opt::TaskgenOpt,
     tasksets::{Taskset, TasksetArray},
 };
+use num::integer::Integer;
 use std::{fs::File, io::prelude::*, iter::FromIterator};
 use structopt::StructOpt;
 
 pub fn gen_tasksets(opt: &TaskgenOpt) -> TasksetArray {
     let mut tasksets = Vec::new();
+    let mut nsets = opt.nsets;
 
-    let (x, periods) = python::get_with_opt(&opt).unwrap();
+    let mut new_opt = opt.clone();
+    new_opt.nsets = 1;
 
-    for (i, p) in x.into_iter().zip(periods) {
-        let mut c = &i * &p;
+    while nsets != 0 {
+        let (x, periods) = python::get_with_opt(&new_opt).unwrap();
+        let (i, p) = (x.first().unwrap(), periods.first().unwrap());
+
+        let mut c = i * p;
 
         if opt.round_c {
             c = ndarray::arr1(
@@ -27,7 +33,15 @@ pub fn gen_tasksets(opt: &TaskgenOpt) -> TasksetArray {
             );
         }
 
-        tasksets.push(vec![i, (&c / &p), p, c]);
+        if c.iter().any(|x| *x < 1_500.0)
+            || p.iter().fold(1, |hyp, p| hyp.lcm(&(*p as usize))) as f64 / 1_000_000.0 > 4.0
+        {
+            continue;
+        }
+
+        nsets -= 1;
+        let u = &c / p;
+        tasksets.push(vec![i.clone(), u, p.clone(), c]);
     }
 
     (&tasksets).into()
@@ -55,7 +69,14 @@ fn main() -> std::io::Result<()> {
     std::fs::create_dir_all("./json")?;
 
     tasksets.as_ref().iter().enumerate().for_each(|(i, t)| {
-        rt_app::create_config_json(t, &opt.rtapp_options, &format!("./json/Config{}_{}t_{:.1}u.json", i, opt.taskgen_options.n, opt.taskgen_options.util as f32))
+        rt_app::create_config_json(
+            t,
+            &opt.rtapp_options,
+            &format!(
+                "./json/Config{}_{}t_{:.1}u.json",
+                i, opt.taskgen_options.n, opt.taskgen_options.util as f32
+            ),
+        )
     });
 
     Ok(())

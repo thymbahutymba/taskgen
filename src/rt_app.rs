@@ -5,6 +5,10 @@ use crate::{
 use serde::Serialize;
 use std::{collections::HashMap, fs::File, io::prelude::*};
 
+// Period as H_TIMES * hyperperiod
+const H_TIMES: usize = 10;
+const RUNTIME: f32 = 0.90;
+
 #[derive(Serialize)]
 struct TaskTimer {
     period: usize,
@@ -26,7 +30,7 @@ struct JsonTask {
 impl From<&Task> for JsonTask {
     fn from(t: &Task) -> Self {
         JsonTask {
-            runtime: (t.c() * 0.95) as usize, // (t.c() * 1_000.0) as usize, // ms -> us
+            runtime: (t.c() * RUNTIME) as usize, // (t.c() * 1_000.0) as usize, // ms -> us
             timer: TaskTimer {
                 period: *t.period() as usize, //(t.period() * 1_000.0) as usize, // ms -> us
                 refs: "unique".into(),
@@ -73,7 +77,7 @@ pub fn create_config_json(t: &Taskset, global_conf: &RTAppOpt, fname: &String) {
     // Hyperperiod from usec to sec
     let hyperperiod = (t.get_hyperperiod() as f64 / 1_000_000.0).ceil() as usize;
     let rt_app_config = JsonRtappConfig {
-        duration: (2 * hyperperiod), // seconds
+        duration: (H_TIMES * hyperperiod), // seconds
         inner: global_conf,
     };
 

@@ -19,7 +19,7 @@ pub struct Opt {
     pub from_file: Option<PathBuf>,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(StructOpt, Debug, Clone)]
 pub struct TaskgenOpt {
     // Configuration for taskgen
     #[structopt(
@@ -97,6 +97,12 @@ pub struct RTAppOpt {
         possible_values = &["SCHED_OTHER", "SCHED_IDLE", "SCHED_RR", "SCHED_FIFO", "SCHED_DEADLINE"],
     )]
     default_policy: String,
+    #[structopt(
+        long,
+        help = "A integer skips the calibration step and uses the integer value as ns per loop.",
+        default_value = "51"
+    )]
+    calibration: usize,
     //#[structopt(long, help = "Enable the prority inheritance of mutex")]
     #[structopt(skip)]
     pi_enabled: bool,
@@ -109,7 +115,7 @@ pub struct RTAppOpt {
         default_value = "./",
         help = "Path to store the various log files"
     )]*/
-    #[structopt(skip = "./rtapp-log")]
+    #[structopt(skip = "./rt-app-log")]
     logdir: PathBuf,
     /*#[structopt(
         long,
@@ -124,15 +130,16 @@ pub struct RTAppOpt {
         possible_values = &["file", "Disable", "Auto", "Size"],
         default_value = "file"
     )]*/
-    #[structopt(skip = "file")]
-    log_mode: String,
+    //#[structopt(skip = "file")]
+    //log_mode: String,
     /*#[structopt(
         long,
         help = "A Integer defines a fix size in MB of the temporary buffer, required if log_mode set to `Size`.",
         required_if("log_mode", "Size")
-    )]
-    log_size: usize,
-    #[structopt(
+    )]*/
+    #[structopt(skip = "auto")]
+    log_size: String,
+    /*#[structopt(
         long,
         help = "rt-app logs in ftrace the events corresponding to the requested categories",
         possible_values = &["main", "task", "run", "loop", "stats"],
