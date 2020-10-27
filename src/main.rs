@@ -33,8 +33,9 @@ pub fn gen_tasksets(opt: &TaskgenOpt) -> TasksetArray {
             );
         }
 
-        if c.iter().any(|x| *x < 1_500.0)
-            || p.iter().fold(1, |hyp, p| hyp.lcm(&(*p as usize))) as f64 / 1_000_000.0 > 4.0
+        if c.iter().any(|x| *x < 1_000.0)
+            || p.iter().fold(1, |hyp, p| hyp.lcm(&(*p as usize))) as f64 / 1_000_000.0
+                > (60.0 * 2.0)
         {
             continue;
         }
@@ -49,6 +50,19 @@ pub fn gen_tasksets(opt: &TaskgenOpt) -> TasksetArray {
 
 fn main() -> std::io::Result<()> {
     let opt = opt::Opt::from_args();
+
+    if let Some(tasksets) = &opt.tasksets {
+        tasksets.iter().for_each(|f| {
+            let mut file = File::open(f).unwrap();
+            let mut contents = String::new();
+            file.read_to_string(&mut contents).unwrap();
+
+            rt_app::write_back_config_json(&contents);
+            println!("");
+        });
+
+        return Ok(());
+    }
 
     let tasksets = if let Some(path) = &opt.from_file {
         /* Create tasksets from file */
@@ -71,7 +85,7 @@ fn main() -> std::io::Result<()> {
     tasksets.as_ref().iter().enumerate().for_each(|(i, t)| {
         rt_app::create_config_json(
             t,
-            &opt.rtapp_options,
+            opt.rtapp_options.clone(),
             &format!(
                 "./json/Config{}_{}t_{:.1}u.json",
                 i, opt.taskgen_options.n, opt.taskgen_options.util as f32

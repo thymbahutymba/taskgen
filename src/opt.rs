@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -17,6 +17,12 @@ pub struct Opt {
         parse(from_os_str)
     )]
     pub from_file: Option<PathBuf>,
+    #[structopt(
+        long = "deserialize",
+        help = "Deserialize json tasksets and produce back the taskgen output.",
+        parse(from_os_str)
+    )]
+    pub tasksets: Option<Vec<PathBuf>>,
 }
 
 #[derive(StructOpt, Debug, Clone)]
@@ -88,7 +94,7 @@ pub struct TaskgenOpt {
     )]
     pub format: String,*/
 }
-#[derive(StructOpt, Debug, Serialize)]
+#[derive(StructOpt, Debug, Serialize, Deserialize, Clone)]
 pub struct RTAppOpt {
     #[structopt(
         long,
@@ -107,7 +113,7 @@ pub struct RTAppOpt {
     #[structopt(skip)]
     pi_enabled: bool,
     //#[structopt(long, help = "Lock the mem page in RAM")]
-    #[structopt(skip)]
+    #[structopt(skip = true)]
     lock_pages: bool,
     /*#[structopt(
         long,

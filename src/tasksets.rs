@@ -1,3 +1,4 @@
+use crate::rt_app::{JsonTask, JsonTaskset};
 use getset::Getters;
 use ndarray::Array1;
 use num::integer::Integer;
@@ -18,8 +19,25 @@ impl From<&[f32; 4]> for Task {
     }
 }
 
+impl From<&JsonTask> for Task {
+    fn from(jt: &JsonTask) -> Self {
+        Task {
+            i: *jt.dl_runtime() as f32 / *jt.dl_period() as f32,
+            util: *jt.dl_runtime() as f32 / *jt.dl_period() as f32,
+            period: *jt.dl_period() as f32,
+            c: *jt.runtime() as f32,
+        }
+    }
+}
+
+impl From<&Task> for Vec<f32> {
+    fn from(t: &Task) -> Self {
+        vec![*t.i(), *t.util(), *t.c(), *t.period()]
+    }
+}
+
 #[derive(Debug)]
-pub struct Taskset(Vec<Task>);
+pub struct Taskset(pub Vec<Task>);
 
 impl Taskset {
     pub fn get_hyperperiod(&self) -> usize {
@@ -71,6 +89,18 @@ impl<'a> FromIterator<&'a str> for Taskset {
                 })
                 .collect::<Vec<Task>>(),
         )
+    }
+}
+
+impl From<&JsonTaskset> for Taskset {
+    fn from(j: &JsonTaskset) -> Self {
+        Taskset(j.0.iter().map(|(_, t)| t.into()).collect())
+    }
+}
+
+impl From<&Taskset> for Vec<Vec<f32>> {
+    fn from(ts: &Taskset) -> Self {
+        ts.0.iter().map(|t| t.into()).collect()
     }
 }
 

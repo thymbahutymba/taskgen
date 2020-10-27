@@ -2,28 +2,35 @@ use crate::{
     opt::RTAppOpt,
     tasksets::{Task, Taskset},
 };
-use serde::Serialize;
-use std::{collections::HashMap, fs::File, io::prelude::*};
+use getset::Getters;
+use serde::{Deserialize, Serialize};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{self, prelude::*},
+};
 
 // Period as H_TIMES * hyperperiod
-const H_TIMES: usize = 10;
-const RUNTIME: f32 = 0.90;
+const H_TIMES: usize = 2;
+const RUNTIME: f32 = 0.99;
 
-#[derive(Serialize)]
-struct TaskTimer {
+#[derive(Serialize, Deserialize)]
+pub struct TaskTimer {
     period: usize,
     mode: String,
     #[serde(rename = "ref")]
     refs: String,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, Getters)]
 #[serde(rename_all = "kebab-case")]
-struct JsonTask {
+#[getset(get = "pub")]
+pub struct JsonTask {
     runtime: usize,
     timer: TaskTimer,
     dl_runtime: usize,
     dl_period: usize,
+    delay: usize,
 }
 
 // Convert the taskset's tasks into json tasks that can be serialized as rt-app wants
@@ -38,12 +45,13 @@ impl From<&Task> for JsonTask {
             },
             dl_runtime: *t.c() as usize,
             dl_period: *t.period() as usize,
+            delay: 500000,
         }
     }
 }
 
-#[derive(Serialize)]
-struct JsonTaskset(HashMap<String, JsonTask>);
+#[derive(Serialize, Deserialize)]
+pub struct JsonTaskset(pub HashMap<String, JsonTask>);
 
 // Convert the Taskset into JsonTaskset that can be serialized as rt-app wants
 impl From<&Taskset> for JsonTaskset {
@@ -59,21 +67,21 @@ impl From<&Taskset> for JsonTaskset {
 }
 
 // rt-app global configuration json object
-#[derive(Serialize)]
-struct JsonRtappConfig<'a> {
+#[derive(Serialize, Deserialize)]
+struct JsonRtappConfig {
     duration: usize,
     #[serde(flatten)]
-    inner: &'a RTAppOpt,
+    inner: RTAppOpt,
 }
 
 // rt-app Config.json
-#[derive(Serialize)]
-struct JsonConfig<'a> {
+#[derive(Serialize, Deserialize)]
+struct JsonConfig {
     tasks: JsonTaskset,
-    global: JsonRtappConfig<'a>,
+    global: JsonRtappConfig,
 }
 
-pub fn create_config_json(t: &Taskset, global_conf: &RTAppOpt, fname: &String) {
+pub fn create_config_json(t: &Taskset, global_conf: RTAppOpt, fname: &String) {
     // Hyperperiod from usec to sec
     let hyperperiod = (t.get_hyperperiod() as f64 / 1_000_000.0).ceil() as usize;
     let rt_app_config = JsonRtappConfig {
@@ -89,4 +97,19 @@ pub fn create_config_json(t: &Taskset, global_conf: &RTAppOpt, fname: &String) {
     let mut file = File::create(fname).unwrap();
     file.write_all(serde_json::to_string_pretty(&config).unwrap().as_bytes())
         .unwrap();
+}
+
+pub fn write_back_config_json(json: &String) {
+    let json_content: JsonConfig = serde_json::from_str(json).unwrap();
+    let taskset: Taskset = (&json_content.tasks).into();
+    let task_array: Vec<Vec<f32>> = (&taskset).into();
+    let mut wtr = csv::WriterBuilder::new()
+        .delimiter(b' ')
+        .from_writer(io::stdout());
+
+    task_array
+        .into_iter()
+        .for_each(|t| wtr.serialize(t).unwrap());
+
+    wtr.flush().unwrap();
 }
