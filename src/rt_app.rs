@@ -7,12 +7,13 @@ use serde::{Deserialize, Serialize};
 use std::{
     collections::HashMap,
     fs::File,
-    io::{self, prelude::*},
+    io::prelude::*,
+    path::PathBuf,
 };
 
 // Period as H_TIMES * hyperperiod
 const H_TIMES: usize = 2;
-const RUNTIME: f32 = 0.99;
+const RUNTIME: f32 = 0.95;
 
 #[derive(Serialize, Deserialize)]
 pub struct TaskTimer {
@@ -99,17 +100,14 @@ pub fn create_config_json(t: &Taskset, global_conf: RTAppOpt, fname: &String) {
         .unwrap();
 }
 
-pub fn write_back_config_json(json: &String) {
-    let json_content: JsonConfig = serde_json::from_str(json).unwrap();
+pub fn json_file_to_csv(fname: &PathBuf) {
+    let mut file = File::open(fname).unwrap();
+    let mut contents = String::new();
+    file.read_to_string(&mut contents).unwrap();
+
+    let json_content: JsonConfig = serde_json::from_str(&contents).unwrap();
     let taskset: Taskset = (&json_content.tasks).into();
-    let task_array: Vec<Vec<f32>> = (&taskset).into();
-    let mut wtr = csv::WriterBuilder::new()
-        .delimiter(b' ')
-        .from_writer(io::stdout());
 
-    task_array
-        .into_iter()
-        .for_each(|t| wtr.serialize(t).unwrap());
-
-    wtr.flush().unwrap();
+    println!("{}", taskset.to_csv());
+    println!("");
 }

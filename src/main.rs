@@ -35,7 +35,7 @@ pub fn gen_tasksets(opt: &TaskgenOpt) -> TasksetArray {
 
         if c.iter().any(|x| *x < 1_000.0)
             || p.iter().fold(1, |hyp, p| hyp.lcm(&(*p as usize))) as f64 / 1_000_000.0
-                > (60.0 * 2.0)
+                > (60.0 * 10.0)
         {
             continue;
         }
@@ -52,14 +52,9 @@ fn main() -> std::io::Result<()> {
     let opt = opt::Opt::from_args();
 
     if let Some(tasksets) = &opt.tasksets {
-        tasksets.iter().for_each(|f| {
-            let mut file = File::open(f).unwrap();
-            let mut contents = String::new();
-            file.read_to_string(&mut contents).unwrap();
-
-            rt_app::write_back_config_json(&contents);
-            println!("");
-        });
+        tasksets.iter().for_each(|f| 
+            rt_app::json_file_to_csv(f)
+        );
 
         return Ok(());
     }

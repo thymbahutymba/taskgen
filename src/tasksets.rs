@@ -37,7 +37,7 @@ impl From<&Task> for Vec<f32> {
 }
 
 #[derive(Debug)]
-pub struct Taskset(pub Vec<Task>);
+pub struct Taskset(Vec<Task>);
 
 impl Taskset {
     pub fn get_hyperperiod(&self) -> usize {
@@ -45,6 +45,14 @@ impl Taskset {
             .iter()
             .map(|elem| elem.period)
             .fold(1, |hyp, p| hyp.lcm(&(p as usize)))
+    }
+
+    pub fn to_csv(&self) -> String {
+        self.0
+            .iter()
+            .map(|t| format!("{:.15} {:.15} {:>10.0} {:>10.0}", t.i(), t.util(), t.c(), t.period()))
+            .collect::<Vec<String>>()
+            .join("\n")
     }
 }
 
@@ -98,11 +106,11 @@ impl From<&JsonTaskset> for Taskset {
     }
 }
 
-impl From<&Taskset> for Vec<Vec<f32>> {
-    fn from(ts: &Taskset) -> Self {
-        ts.0.iter().map(|t| t.into()).collect()
-    }
-}
+//impl From<&Taskset> for Vec<Vec<f32>> {
+//    fn from(ts: &Taskset) -> Self {
+//        ts.0.iter().map(|t| t.into()).collect()
+//    }
+//}
 
 #[derive(Debug)]
 pub struct TasksetArray(Vec<Taskset>);
